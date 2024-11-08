@@ -17,6 +17,7 @@ gum.pkg-path = "gum"
 
 # Deps for our service scripts
 bash.pkg-path = "bash"
+bash.priority = 0
 curl.pkg-path = "curl"
 
 # System/C deps

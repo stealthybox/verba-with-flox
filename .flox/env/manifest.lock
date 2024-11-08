@@ -4,7 +4,8 @@
     "version": 1,
     "install": {
       "bash": {
-        "pkg-path": "bash"
+        "pkg-path": "bash",
+        "priority": 0
       },
       "curl": {
         "pkg-path": "curl"
@@ -129,7 +130,7 @@
       },
       "system": "aarch64-darwin",
       "group": "toplevel",
-      "priority": 5
+      "priority": 0
     },
     {
       "attr_path": "bash",
@@ -164,7 +165,7 @@
       },
       "system": "aarch64-linux",
       "group": "toplevel",
-      "priority": 5
+      "priority": 0
     },
     {
       "attr_path": "bash",
@@ -199,7 +200,7 @@
       },
       "system": "x86_64-linux",
       "group": "toplevel",
-      "priority": 5
+      "priority": 0
     },
     {
       "attr_path": "bash",
@@ -233,7 +234,7 @@
       },
       "system": "x86_64-darwin",
       "group": "toplevel",
-      "priority": 5
+      "priority": 0
     },
     {
       "attr_path": "curl",
