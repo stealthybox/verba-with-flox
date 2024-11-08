@@ -1,0 +1,86 @@
+---
+title: 'Nix in the Wild: Project IDX'
+altTitle: 'Nix in the Wild: Project IDX'
+description: 'We caught up with Vova Kryachko from Project IDX and asked him to tell us how his team use Nix to deliver a flexible IDE experience in the cloud. Some of his answers may surprise you.'
+metaDescription: 'We caught up with Vova Kryachko from Project IDX and asked him to tell us how his team use Nix to deliver a flexible IDE experience in the cloud. Some of his answers may surprise you.'
+isPublished: true
+isNixInTheWild: true
+publishedDate: 2 Nov 2023
+thumbnail: /images/blog/cloud-devs.webp
+orderBy: 27
+---
+
+<div className="nitw-header not-prose">
+  <strong>Nix in the Wild</strong> is a series where we dive into the stories of
+  [Nix](https://nixos.org) users across the industry, covering everything from
+  the dotfiles of crafty developers to the processes of engineering leaders in
+  large organizations. Learn where Nix is used, how it came to be, and why it
+  works the way it does.
+</div>
+
+Almost every discipline of engineering - from frontend to backend, cloud operations and data engineering - is experiencing the growing pains of complexity, over-engineering, and multiple platforms, languages and supporting frameworks. Interoperability is becoming a nightmare to manage, and the modern web developer is no stranger to these pains.
+
+That’s why Google started [Project IDX](https://idx.dev/), an ambitious solution to one of full stack developers’ greatest pains. It is a web-based coding workspace built using one of our favorite things: [Nix](https://nixos.org/)!
+
+[Vova Kryachko](https://github.com/vkryachko/) has been working at Google for nearly seven years on many projects. In this edition of Nix in the Wild, we got a chance to ask him a few questions about how he and his team use Nix.
+
+**Q: Thanks for speaking with us today! Let’s start at the beginning. What made you and your team realize you needed something like Nix?**
+
+A: At first, the IDX experience was specifically designed for the web or flutter developer, and there wasn’t very much a user could do to customize it.
+
+We quickly realized that the primary challenge in today’s polyglot and multi-tooling world is that developers like to bring their own stacks everywhere. It became clear that limiting developers to the tools we think they need will prevent many developers from adopting the product. However, enabling developers to bring their own set of tools into the IDE - while maintaining a great UX and dev experience - brought its own unique challenges.
+
+**Q: I suppose you immediately thought of containers?**
+
+A: Yes! As we started looking into potential ways to do this, we quickly landed on dev containers with Docker as a leading option. The initial working assumption was that containers would be a good fit: developers are familiar with it, dockerfiles are generally self-contained, and they’re already compatible with all the tools people require.
+
+But the more we looked into it, the more complications we uncovered. We are a dev tool, so we need to optimize for speed. That means prebuilding as much of the dev environment as we can, so that a dev can open it up and get to work quickly. Because of the way Docker’s cache is built upon layers, this becomes a many-to-many scaling issue. We realized we would need to build each layer of each container image ahead of time.
+
+We also want to make sure environments are available to support code in customer repositories, which means also building container images for every commit in all of those repos in advance. As we began to model the work, it became obvious that this would require a lot of time and enormous compute and storage resources. We concluded that it wasn’t scalable or feasible using Docker, and we’d need to start exploring other alternatives.
+
+**Q: Was there a Nix champion on the team at that point?**
+
+A: No, we largely stumbled upon Nix! We were looking for a tool that could potentially solve all these issues, but no one on the team really had any experience with it. It felt a bit otherworldly at first - different than anything we had experienced before. At first it wasn’t quite clear whether this is a package manager or a build system - like, what do I even do with this JSON looking thing?!
+
+But as we spent more time with Nix and learned more about it, the benefits began to become apparent.
+
+**Q: What was the first of those benefits you encountered, the one that made you dig deeper?**
+
+A: The immediately apparent advantage of using Nix was its ability to build from Nixpkgs, which provides most developers with the components they need for their environments.
+
+But we quickly started enjoying it for its speed. Packages compose much better than image layers and initializing an environment is orders of magnitude faster. A lot of this is due to the nature of Nix - even without using any caching on the VM-side, having everything downloaded just in time from cache.nixos.org, it still runs blazing fast. That feels nice to use in action.
+
+**Q: Speed always makes for a great user experience. Did it come at a cost?**
+
+A: Not really! It also scales much better. With containers, the number of things that needed to be prebuilt could be astronomical - even for just one IDE environment! With Nix, the amount of caching is linear to the number of packages in use, instead of the number of repos and commits. Having a centralized source of packages results in a much smaller set of things that need to be continuously built.
+
+Nix enables us to know exactly which services are linked, making the runtime deterministic, while at the same time offering personalized environments to each individual developer.
+
+**Q: Personalized Nix environments in-browser? Is this something people can use today?**
+
+A: Yes. We’re gradually migrating all of the services that power IDX to Nix. For now, developers can enable it with a feature flag.
+
+Once they do, they are given the ability to specify which packages they want inside their environment from two primary Nixpkgs channels: the latest stable release and a more leading-edge unstable release. We have docs that cover the Nix language to help users learn how to create their environments.
+
+**Q: What has the user reaction been so far?**
+
+A: There were some initial concerns about the learning curve of Nix. But feedback has been overwhelmingly positive with very few issues reported. It’s possible to enable and disable features in the IDE using the Nix language as well, and users have been taking advantage of this pretty seamlessly.
+
+It’s been great for us to be able to use a well-established tool like Nix for this, without having to reinvent the wheel or write their own set of tools.
+
+**Q: What does the future hold for your team and Nix? Any plans on the horizon?**
+
+A: We are looking at possibly creating our own DSL, perhaps something a bit simpler to use than the Nix language while still employing the locking made possible in Nix and supporting its various inputs. If we make it even easier, perhaps it will be useful to more people.
+
+Also, we’re looking into pre-populating local Nix stores with packages from various channels to facilitate instant installations. That would be pretty cool.
+
+<div className="nitw-footer not-prose">
+  <p>
+    <strong>Do you have a Nix story to tell?</strong>
+  </p>
+  <p>
+    We'd love to talk with you. Drop us a line at
+    [nitw@floxdev.com](mailto:nitw@floxdev.com) to be featured in a future Nix
+    in the Wild post.
+  </p>
+</div>

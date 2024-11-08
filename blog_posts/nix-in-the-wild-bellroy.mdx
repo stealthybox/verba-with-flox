@@ -1,0 +1,126 @@
+---
+title: 'Nix in the Wild: Bellroy'
+altTitle: 'Nix in the Wild: Bellroy'
+description: 'Nix is more than just an accessory for chic designer Bellroy: it is a critical piece in its innovative software stack, making difficult things possible in a unique, valuable way.'
+metaDescription: 'Nix is more than just an accessory for chic designer Bellroy: it is a critical piece in its innovative software stack, making difficult things possible in a unique, valuable way.'
+isPublished: true
+isNixInTheWild: true
+author: Steve Swoyer and Jack Kelly
+publishedDate: 01 November 2024
+thumbnail: /images/blog/chic-accoutrement.webp
+orderBy: 20241101
+---
+
+<div className="nitw-header not-prose">
+  <strong>Nix in the Wild</strong> is a series where we dive into the stories of
+  [Nix](https://nixos.org) users across the industry, covering everything from
+  the dotfiles of crafty developers to the processes of engineering leaders in
+  large organizations. Learn where Nix is used, how it came to be, and why it
+  works the way it does.
+</div>
+
+The Australian brand Bellroy is world-renowned for the chic, functional design of its iconic accessories. It is less well known as an extreme software engineering shop.
+
+Yet software engineering has played an outsized role in Bellroy’s growth. At each stage of its transition from scrappy, upstart e-tailer to thriving omnichannel retailer, Bellroy has had to make careful decisions about software architecture, programming paradigms and practices, and its technology stack.
+
+Over the past few years, Nix has become an increasingly important part of that stack.
+
+First, `shell.nix` files gave Bellroy a way to standardize the development environments for its software. And when Bellroy started heavily using [AWS Lambda](https://aws.amazon.com/lambda), [IOG’s](https://github.com/input-output-hk) [haskell.nix](https://github.com/input-output-hk/haskell.nix) framework provided a reliable way to build Lambda deployment packages, as well as manage custom native dependencies. 
+
+“Part of what you get with Nix is that when it works, it _stays_ working, so it’s not like other systems where you have this ongoing maintenance where you’re constantly having to touch it,” says Jack Kelly, Bellroy’s inaugural staff engineer. 
+
+As Bellroy’s most experienced Nix user, Kelly admits he’s grown to love it—warts and all. “Yes, it’s a bit ugly and, yes, I have some objections to the language, but it’s built on a fundamentally good idea and it makes things possible that you can’t get anywhere else,” he observes.
+
+He paraphrases a quote variously attributed to Perl creator Larry Wall and Turing Award-winner Alan Kay. “Easy things should be easy; hard things should be possible,” Kelly says.
+
+“While it’s true that Nix still struggles with making simple things easy, it makes hard things possible in a unique, truly valuable way.”
+
+
+## Standardized Developer Shells
+
+Initially, Bellroy’s Tech Team just needed a way to standardize their local development environments. Nix gave them tools to do this and also dropped right into their existing workflows—without requiring containers.
+
+Yes, Kelly acknowledges, Nix itself has a learning curve, but most software engineers at Bellroy didn’t (and still don’t) have to worry about this. When Bellroy started with Nix, Kelly and a few other enthusiasts were responsible for creating the `shell.nix` files Nix uses to automatically configure tools and dependencies for each platform and use case.
+
+From the get-go, the only Nix expertise other developers on Bellroy’s Tech Team needed to know was how to run `nix-shell`. You use this command to initialize a shell that installs and configures all the packages defined in `shell.nix`. This gives coders a development environment with all of the tools (along with specific versions of dependencies) they require for their projects. 
+
+And, just like with a container, the environments Nix creates are isolated from the local system’s global settings. Developers can set them up and tear them down as needed.
+
+Nix is brilliant for this, says Kelly. “We said, ‘We're gonna try Nix shells and see how they go.’ And that paid off well enough that pretty much everyone is happy using Nix as a source for their dev tooling,” he explains. “And our success with that enabled us to go further into Nix as and when we needed it.”
+
+
+## Solving AWS Lambda Deployment Pain
+
+The next phase in Bellroy’s journey was to use Nix to package Haskell executables for AWS Lambda. This was a decision Kelly had to talk himself into, and it took some convincing.
+
+It’s like this: Lambda presents well-known deployment challenges. It expects packages to be self-contained—with the executable and all dependencies built into it. In addition, Lambda has [limits on the size of deployment packages](https://docs.aws.amazon.com/lambda/latest/dg/gettingstarted-limits.html), and Haskell is notorious for compiling to large binaries with extensive dependencies.
+
+The challenge with using Lambda and Haskell—or _any_ compiled language—isn't just including the required libraries. It’s ensuring that the executables are correctly linked so that they can locate and use their libraries at runtime. Initially, containers gave Bellroy a workable, though sub-optimal, solution. At the very least, using a build container ensured binaries were dynamically linked to system libraries when running in the Lambda environment.
+
+“For a time, we were able to get by doing our builds in a container that had a very similar set of libraries [to the Lambda runtime environment]. So you'd upload the binary produced by that build process to Lambda, and it would dynamically link to the system libraries, which usually worked,” Kelly explains.
+
+Ultimately, the real catalyst for using Nix to build deployment artifacts was Bellroy’s desire to have AWS Lambda Functions publish records to Kafka topics. The chief problem was that the Kafka client Bellroy needed to use wasn’t available in Lambda’s cloud execution environment.
+
+On top of this, Kelly points out, there also wasn’t an obvious trustworthy source for RPM packages that would be compatible with this environment. This meant the team had to configure and build the [`librdkafka`](https://github.com/confluentinc/librdkafka) Kafka client library directly from source. Only then could they package everything up into a ZIP file and deploy it to AWS Lambda. If it’s true that Nix makes difficult things doable, this was going to be a doozy of a test, because it would significantly complicate the team’s build process, too.
+
+Here again, Bellroy found a solution in Nix, tapping IOG’s [haskell.nix framework](https://github.com/input-output-hk/haskell.nix/) to create statically linked binaries for Lambda. First, `haskell.nix` provides versions of the [Glasgow Haskell Compiler](https://github.com/ghc) that can create fully static binaries, using [musl libc](https://musl.libc.org/). Second, it has access to the massive [nixpkgs](https://github.com/NixOS/nixpkgs) package set, which includes `librdkafka`. Finally, Nix makes it easy to post-process build outputs into ZIP files and call out to tools like the [UPX executable compressor](https://upx.github.io/), keeping packages under Lambda’s size limits.
+
+All of this makes sense in retrospect, Kelly acknowledges. At the time, however, he was uncertain about how understandable and maintainable it would be, particularly given Nix’s reputedly steep learning curve. 
+
+“I was probably the most experienced Nix user on the team. I set up the [Hydra server](https://github.com/NixOS/hydra), and I also wrote most of the stuff we needed to get Haskell going in Lambda,” he points out. “But I was probably the least enthusiastic about pushing `haskell.nix`, even though, for us, it’s performed really well.”
+
+
+
+## The Cause of, and Solution to, its Own Problems
+
+
+A team that adopts Nix can rapidly find themselves in a “Sorcerer’s Apprentice” situation if they’re not careful. It goes like this: Initially they adopt Nix to address a specific problem or use case, and it usually does this very well.
+
+But sooner or later, the team discovers a few more things about Nix: 
+
+-  **First**, it’s a useful tool to solve other problems—often the best overall choice;
+-  **Second**, it has a learning curve that (depending on what you need to do) can quickly become steep; and
+-  **Third**, Nix brings with it a few problems of its own—for which the solution is usually…more Nix!
+
+The near-irresistible temptation to use Nix for _just one more thing_ can lead to a situation in which custom Nix expressions spread throughout a team’s projects. These custom expressions often trigger builds that aren’t available via the public Nix cache at [https://cache.nixos.org](https://cache.nixos.org), which means that developers spend more time waiting for Nix to build things than actually working. Solving this requires deploying a private cache and a system to populate it. For this and other advanced patterns to work, the people responsible for maintaining a team’s Nix tooling have to become stone-cold Nix experts.
+
+Kelly concedes that an engineer might think twice before committing to this level of ownership. He says the key is restraint: it is perfectly reasonable for a team to begin by defining developer environments via `shell.nix` and to carefully expand how they use Nix in phases and stages. Otherwise, what might start as a simple task can require diving into and contributing to frameworks like `haskell.nix`, or deploying custom infrastructure to run a private Hydra server. Doing so has benefits, but this complexity doesn’t have to be adopted all at once.
+
+This is similar to what happened at Bellroy. After successfully using Nix to enable reproducible development environments, Kelly mainly had to _talk himself_ into committing to the next phase in Bellroy’s journey.
+
+“I’d say, ‘We don’t have to use Docker for the Haskell builds, and I can get the other libraries we need from Nix, too. I’m not saying we need to do it this way, but….’ And they just said ‘Okay,’” he explains. “That’s it: ‘Okay.’ They were okay with it. I expected more of an uphill battle and a bit more skepticism in the team. But we had the buy-in from the rest of the team, and it has worked out well. Turns out, I was the one who needed to be convinced.”
+
+
+
+## The Cure for Wicked Build Problems
+
+Ultimately, sheer necessity is what convinced Kelly that Nix was the right call. This, too, is familiar. Obviously, it’s an exaggeration to say that people come to Nix _only_ when they’ve exhausted other options; however, it’s definitely the case that Nix adoption is self-selecting: if you’ve got a wicked build problem, Nix is probably going to be one of the tools on your shortlist.
+
+Once a software engineering team gets a taste for Nix, it’s difficult to resist its siren song.
+
+This is true even when a team adopts Nix to address a specific use case or a strict set of requirements—for instance, as part of a scalable, reproducible pattern for container-less local builds. Odds are they’re going to be tempted to use it _whenever_ they bump up against hard build problems.
+
+Whether it’s managing dependencies across toolchains; using declarative methods to define software; or automating custom, reproducible CI build processes, Nix is often seen as the answer to a stymied engineering team’s prayers—its many benefits decisively outweighing the effort involved in mastering it. This was absolutely the case with Kelly and Bellroy.
+
+“The local developer environment story is so valuable, because this is such a major pain point for people. You join a project, and you’re like, ‘Okay, how do I actually build this thing?’ The answer is you run `nix develop` and then you run `make` or the equivalent. And that is just fantastic,” he points out. 
+
+“Eventually, we needed it for things we couldn’t do otherwise. So how do you describe that? Maybe like this: Nix isn’t a tick-all-the-boxes type thing; it just makes the seemingly impossible possible.”  
+
+
+
+## When is Nix worth it?
+
+In spite of his fondness for Nix, Kelly advocates for a strategic, needs-based approach to adopting it. “The thing you need to ask yourself is whether having this type of tool at this layer is going to solve your problem,” he explains.
+
+The crux of Kelly’s question goes to the skill, discipline, and (not least) identity of a software engineering team. “If you're dealing with problems in your dev process, where are they? Are you going to be better served by getting good type-checking going, or being more disciplined about the code you write, than the deployment stuff?” he asks.
+
+“I'd be looking for whether there's enough problems at the build-process level that adopting Nix is actually going to make your life better. You're going to get a much better Nix story with Haskell than with Python, or JavaScript, or something like that.”
+
+If yours is a team that takes pride in its engineering culture, Nix is a more attractive option, Kelly argues. “I think we at Bellroy have the philosophy that we want to use great tools, but we’ve also accepted that if they aren’t available, we're willing to build our own,” he concludes, citing Bellroy’s highly customized Haskell builds for AWS Lambda.
+
+“If you're setting up your own deployments, Nix is good at plugging into anything. You can build ZIP files for Lambda, you can build container images, you can even build VM images and import them into your cloud provider. These are all things you can do. The question you have to ask yourself is: Does your team need to do these things and do they have the ability to maintain the Nix code to make them possible?”
+
+
+
+
+_You can read more about Bellroy's journey with Nix on the company's [Technical Blog](https://exploring-better-ways.bellroy.com/the-history-of-nix-at-bellroy.html)!_

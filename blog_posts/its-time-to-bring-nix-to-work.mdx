@@ -1,0 +1,113 @@
+---
+title: "It's Time to Bring Nix to Work"
+altTitle: "It's Time to Bring Nix to Work"
+description: "Flox is designed for users of all kinds. It unlocks the potential of Nix without requiring in-depth knowledge of it, and gives Nix experts a great way to enable their teams."
+metaDescription: "Flox is designed for users of all kinds. It unlocks the potential of Nix without requiring in-depth knowledge of it, and gives Nix experts a great way to enable their teams."
+isPublished: true
+author: Ross Turk
+publishedDate: 24 October 2024
+thumbnail: '/images/blog/flox-gets-flaky.webp'
+orderBy: 20241024
+---
+
+You've learned enough [Nix](https://github.com/NixOS/nix) to make it work for you. You even use it for a few team projects, and everybody loves what it can do... but you're still not satisfied. You believe it could change the way your company does _everything_.
+
+But not everyone on your team knows Nix. Sound familiar?
+
+If you look through our [Nix in the Wild](/nixinthewild) stories, you will find that Nix champions within organizations often report that they exist in a silo. They are among a small number of people who know Nix, and they are responsible for all of it at their organization. The other technologists in their organization come to them when they encounter most Nix scenarios.
+
+**People are not often willing to learn Nix…even if it would make them more productive.**
+
+There are a few reasons for this, but mostly it's because they're too busy to commit the time. They have jobs, too, and few of those jobs give them the push or the excuse to learn Nix. It's just too much cognitive load for their working context - ultimately, there are far more of us who _write and use_ software than _build and package_ it. Nix solves [problems that affect us all](https://nixos.org/guides/how-nix-works/) but don't always attract everybody's attention.
+
+This is exacerbated somewhat by the nature of Nix: it is a decentralized project, built in many waves over a long period of time. It's not one thing, it's a _whole thing_. It's hard to know where to start the learning process - there are a lot of great options that each take different approaches. And, ultimately, there are some Nix concepts that are just plain hard to understand.
+
+**Even the most intrepid user might think twice about digging into Nix after scanning its massive surface area.**
+
+So what can we do? How might we enable users to experience many of the benefits of Nix while delaying (or avoiding) its most difficult learning moments?
+
+## Flox is for flocks
+
+Flox was built to help all kinds of people access the power of Nix.
+
+With Flox, users can build and share virtual environments using the 120,000+ software components already available in [Nixpkgs](https://github.com/NixOS/nixpkgs). These environments work across Linux and Mac, Intel and ARM - they even work in WSL2!
+
+**Users don't need to have Nix installed before they [install Flox](https://flox.dev/docs/install-flox/), and the process is pain-free.**
+
+There is a Flox installer for macOS users and you can `brew install flox`. There are `rpm`/`deb` packages available for those on Linux. When you install on Linux, Flox is registered as a yum/apt repository for seamless upgrades. You can also install Flox into an existing Nix or NixOS system.
+
+Flox offers semantics that technologists are already familiar with: init, search, install, activate, push, and pull. Users don't have to learn a new language, and they won't have to dedicate any headspace towards the build & packaging that occurs behind the scenes. They simply [`flox install`](https://flox.dev/docs/reference/command-reference/flox-install/) the software they need.
+
+```
+% flox install nodejs mkcert imagemagick openssh  # easy and familiar
+```
+
+When it comes time, they [`flox activate`](https://flox.dev/docs/reference/command-reference/flox-activate/) their environments and get a subshell. This is very similar to the one Nix provides with `nix develop`, but with Flox users are able to get there using basic building blocks that feel a lot like `apt`, `yum`, and `brew`.
+
+**Flox makes it easy to build repeatable environments, with very little learning required.**
+
+Can you do everything with Flox that you can do with Nix? No, it is designed to support a more focused set of workflows. Can Flox users define complex overrides, substituters, and write Nix expressions? Not yet. But that's okay! Flox isn't trying to be Nix, it is trying to extend the principles of Nix to a broader set of users.
+
+## Flakes make Flox flexible
+
+But what happens when your users can't find what they need in Nixpkgs? This is where you come in.
+
+Let's say you want to use a less well-known Python package that isn't in Nixpkgs, or use a Rust toolchain targeting WebAssembly or an embedded device. Or perhaps you have some internal software that is a bit tricky to install? Maybe you just have some helper scripts you want to inject into your users' environments.
+
+**Flox allows users to [install flakes](/blog/extending-flox-with-nix-flakes/) alongside packages, using the same simple commands.**
+
+That makes it possible for you to craft flakes for specific situations and deliver them to users. All they need to do is `flox install` them.
+
+```
+% flox install github:flox-examples/claude-cli
+```
+
+Using Flox, your users can install anything they need. You can extend what's in Nixpkgs using flakes, encapsulating your most complex magic so it can be used without fear.
+
+## Flox manifests are easy
+
+Flox environments are defined in a [declarative manifest](https://flox.dev/docs/concepts/manifest/). When users create a new environment using imperative `init` and `install` commands, a TOML file is being assembled behind the scenes.
+
+**We chose TOML for its readability. Even the most basic LLMs can read and understand most Flox environment manifests.**
+
+This TOML file is packed with comments by default, but users probably won't need them. It contains sections for installing software (`[install]`), setting variables (`[vars]`), initialization hooks (`[hook]`), user shell configuration (`[profile]`), and service definition (`[services]`). But most sections are optional, and a minimal manifest can be as small as:
+
+```
+version = 1
+[install]
+openssh.pkg-path = "openssh"
+```
+
+Users who need a bit more than a “virtual cross-platform package manager” (which is already awesome tbh) will find themselves running [`flox edit`](https://flox.dev/docs/reference/command-reference/flox-edit/) to tinker with the manifest pretty quickly. This will show them how to create environments that _do stuff_, like starting services, running `npm ci`, or downloading models from HuggingFace.
+
+When it comes time to help users troubleshoot, this manifest will help you recreate their environment. You will be able to copy their manifest, spin up a matching environment, and troubleshoot with a vastly reduced set of variables.
+
+**Flox can help reduce the whole "it works on my machine" issue, even in heterogeneous environments.**
+
+Better still, your users will be able to create repeatable and portable environments that give them a glimpse of what Nix can do!
+
+## Authoring environments for users
+
+You don't have to wait for your users to create their own Flox environments. You can create and share them yourself.
+
+**As someone who understands how Nix works, your Flox environments can do fancy stuff.**
+
+You know how to select the correct set of packages (i.e., choosing `bashInteractive` instead of `bash`), you understand how they behave when you combine them (i.e., what happens if you install both `python310` and `python311`), you are comfortable working with all of the `pythonPackages` and `nodePackages` collections, and you know how to write flakes that fill in everything that's missing.
+
+For example, you could:
+
+- [hydrate environment variables with secrets](https://flox.dev/blog/adding-1password-secrets-to-flox-environments/)
+- [start complex services](https://flox.dev/blog/flox-1.3-simplified-service-management-with-flox)
+- [initialize user shells properly across zsh/bash/fish](https://flox.dev/blog/mastering-hooks-and-profiles-for-reproducible-flox-environments/)
+- [inject shell helpers via flake for common tasks](https://flox.dev/blog/extending-flox-with-nix-flakes/)
+
+When you create your environments, you can share them with users by pushing them to FloxHub with [`flox push`](https://flox.dev/docs/reference/command-reference/flox-push/) or checking the `.flox` directory into your repo.
+
+
+## At Flox, We Love Nix
+
+We don't just depend on Nix as "our upstream," we rely on the magic of Nix with each and every build. 
+
+We want to bring this magic to as many people as possible. When you use Flox, you’re exposed to core Nix concepts like reproducibility, determinism, and atomic upgrades/rollbacks. And you also get a sense of how Nix works, with the Flox CLI abstacting _just enough_ to make Nix a bit more inutitive and easier to use. 
+
+Flox is free to [download and use](https://flox.dev/docs/install-flox/). It's the best way to bring Nix to your teams _where they work_, using their preferred workflows. Give it a try, and recommend it to those who need it. Your users will thank you!

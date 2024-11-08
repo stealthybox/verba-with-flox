@@ -1,0 +1,147 @@
+---
+title: 'Nix and Containers: why not both?'
+description: >-
+  Think outside the box. People often say they don't use Nix because it solves the same problems that containerization does.
+  This is a half truth. Nix specializes in packaging software, while containerization excels at deploying software. They're best when used together.
+metaTitle: 'Nix and Docker containers: why not both?'
+metaDescription: 'Nix, flox, and docker containers are best when used together.'
+isPublished: true
+publishedDate: 28 February 2023
+thumbnail: /images/blog/containers.webp
+orderBy: 10
+---
+
+People often say they don't use Nix because it solves the same problems that
+containerization does.
+This is a half truth: Nix and containerization both attempt to make software
+deployment reproducible.
+We call this a "half-truth" because Nix specializes in packaging software,
+while containerization excels at deploying software.
+**They're best when used together.**
+
+There are two components to containerization:
+
+1. Packaging software as a container image
+1. Running that container image in a sandbox
+
+While containerization is an effective method for packaging software when you want it to be isolated, it’s not an effective approach for packaging software in general, because containerized software is forever limited to being run inside a Linux container.
+
+Nix (and by extension, [flox](https://flox.dev/docs)) propose a different approach:
+
+1. Package software such that it can be run anywhere
+1. Run that software in a sandbox
+
+Since Nix is a dedicated, cross-platform package manager, software built with Nix can be run natively by developers working on a project, and it can be run natively by users. The same Nix package can produce software that runs on both Linux and macOS, and it’s straightforward to deploy software built with Nix in a container. That’s the main point: we can’t think of any reason it would be better to build software that is restricted to a Linux container. Nix builds software that runs anywhere.
+
+Here’s a more exhaustive reference of some of the advantages this model provides:
+
+<table>
+  <thead>
+    <tr>
+      <th></th>
+      <th>
+        <strong>Containers</strong>
+      </th>
+      <th>
+        <strong>Nix</strong>
+      </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>
+        <strong>Size</strong>
+      </td>
+      <td>
+        Building a container image starts with installing a base OS and a bunch
+        of build time dependencies. Afterward, the user needs to strip
+        everything that's not needed at runtime. It's possible start with
+        minimal base images or use third-party utilities to strip out unneeded
+        software, but by default, container images include unneeded bits.
+      </td>
+      <td>
+        Nix has knowledge of every dependency an application needs at runtime
+        (the runtime closure) -- not only the names of the packages, but also
+        precisely which version and build is needed. With this knowledge it's
+        possible to create "perfect container images", which are by definition
+        the smallest possible size. All of this comes from the primitives
+        provided by Nix.
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>Easy customization</strong>
+      </td>
+      <td>
+        Containers rely on the base image's package manager of choice (e.g. an
+        Ubuntu image will use APT), and for the most part, they are limited to
+        using software included in that distro.
+      </td>
+      <td>
+        Nix is tightly coupled with{' '}
+        <a href="https://flox.dev/blog/nixpkgs-the-big-recipe-book-of-open-source">Nixpkgs </a> -- an open source
+        repository of build recipes for a large number of software packages and
+        libraries. Nix makes it easy to modify the build recipe for a package,
+        allowing freedom from the choices of the distro. And according to
+        repology, Nixpkgs is fresher and larger than any other open source repo,
+        thanks to active support from the Nix community.
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>Reproducibility</strong>
+      </td>
+      <td>
+        Builds are not reproducible. For example, a Dockerfile will run
+        something like <code>apt-get-update</code> as one of the first steps.
+        Resources are accessible over the network at build time, and these
+        resources can change between `docker build` commands. There is no notion
+        of immutability when it comes to source
+      </td>
+      <td>
+        Builds can be fully reproducible. Resources are only available over the
+        network if a checksum is provided to identify what the resource is. All
+        of a package's build time dependencies can be captured through a Nix
+        expression, so the same steps and inputs (down to libc, gcc, etc.) can
+        be repeated.
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>Dependency Sharing</strong>
+      </td>
+      <td>
+        Dependencies are shared if you carefully craft your container layers to
+        be identical.
+      </td>
+      <td>
+        Every dependency can be shared, not only between containers, but also
+        between containers and any machine using Nix.
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>Build instructions</strong>
+      </td>
+      <td>
+        Dockerfiles and official images repeat a lot of work taking place in
+        Nixpkgs (grabbing source, patching, make, make install). And they do
+        this work as pureshell scripts. This results in further inconsistencies
+        and breakages, especially when you need to use a fresher version of some
+        package. There's also no convenient way to build bespoke versions of
+        dependencies when necessary.
+      </td>
+      <td>
+        All packages use a widely maintained and frequently updated set of build
+        instructions. The community keeps these instructions fresh, and we make
+        sure the rare breakages that do occur never propagate to your software.
+        When you need to build bespoke versions of dependencies, Nix makes it
+        easy to override build instructions (e.g. change a build flag).
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<b>In short, use the tools for what they're good at.</b>
+
+If you want help or advice on how to implement this model for your team, we're always happy to [discuss](https://flox.dev/contact)!
